@@ -1,10 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.client.model.dto.GitHubRepository;
-import com.example.demo.client.model.dto.Owner;
-import com.example.demo.client.model.dto.RepositoryDto;
-import com.example.demo.client.model.entity.Repository;
-import com.example.demo.client.service.ResponseService;
+import com.example.demo.model.dto.RepositoryDto;
+import com.example.demo.model.entity.Repository;
+import com.example.demo.service.ResponseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -32,17 +30,6 @@ public class ResponseControllerTest {
     @MockBean
     private ResponseService responseService;
 
-    GitHubRepository gitHubRepository = GitHubRepository.builder()
-            .id(1)
-            .fullName("budzikovy/jwt-authentication")
-            .description("test endpoint put")
-            .cloneUrl("https://github.com/budzikovy/jwt-authentication.git")
-            .stars(1)
-            .createdAt("2024-10-25T11:58:20Z")
-            .owner(new Owner("budzikovy"))
-            .repositoryName("jwt-authentication")
-            .build();
-
     Repository repository = Repository.builder()
             .id(1L)
             .owner("budzikovy")
@@ -64,7 +51,7 @@ public class ResponseControllerTest {
             .build();
 
     @Test
-    void getDetails_ShouldReturnRepository() throws Exception {
+    void getDetails_DataCorrect_ReturnStatus200() throws Exception {
         Mockito.when(responseService.getDetails(repository.getOwner(), repository.getRepositoryName())).thenReturn(repository);
 
         mockMvc.perform(get("/repositories/budzikovy/jwt-authentication"))
@@ -78,23 +65,73 @@ public class ResponseControllerTest {
                 .andExpect(jsonPath("$.cloneUrl").value("https://github.com/budzikovy/jwt-authentication.git"))
                 .andExpect(jsonPath("$.stars").value(1))
                 .andExpect(jsonPath("$.createdAt").value("2024-01-01T00:00:00Z"));
-
     }
 
-//    @Test
-//    void saveRepository_ShouldReturnRepository() throws Exception {
-//        Mockito.when(responseService.saveRepository(repository.getOwner(), repository.getRepositoryName(), any(Repository.class))).thenReturn(repositoryDto);
-//
-//        mockMvc.perform(post("/repositories/budzikovy/jwt-authentication")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(repository)))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.id").value(1L))
-//                .andExpect(jsonPath("$.owner").value("budzikovy"))
-//                .andExpect(jsonPath("$.repositoryName").value("jwt-authentication"));
-//
-//    }
+    @Test
+    void saveRepository_DataCorrect_ReturnStatus200() throws Exception {
+        Mockito.when(responseService.saveRepository(repository.getOwner(), repository.getRepositoryName(), repository))
+                .thenReturn(repositoryDto);
 
+        mockMvc.perform(post("/repositories/budzikovy/jwt-authentication")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(repository)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
+                .andExpect(jsonPath("$.fullName").value(repositoryDto.getFullName()))
+                .andExpect(jsonPath("$.description").value(repositoryDto.getDescription()))
+                .andExpect(jsonPath("$.cloneUrl").value(repositoryDto.getCloneUrl()))
+                .andExpect(jsonPath("$.stars").value(repositoryDto.getStars()))
+                .andExpect(jsonPath("$.createdAt").value(repositoryDto.getCreatedAt()));
+    }
 
+    @Test
+    void getRepositoryDetails_DataCorrect_ReturnStatus200() throws Exception {
+        Mockito.when(responseService.getRepositoryDetails(repository.getOwner(), repository.getRepositoryName()))
+                .thenReturn(repositoryDto);
 
+        mockMvc.perform(get("/repositories/local/budzikovy/jwt-authentication"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
+                .andExpect(jsonPath("$.fullName").value(repositoryDto.getFullName()))
+                .andExpect(jsonPath("$.description").value(repositoryDto.getDescription()))
+                .andExpect(jsonPath("$.cloneUrl").value(repositoryDto.getCloneUrl()))
+                .andExpect(jsonPath("$.stars").value(repositoryDto.getStars()))
+                .andExpect(jsonPath("$.createdAt").value(repositoryDto.getCreatedAt()));
+    }
+
+    @Test
+    void editRepository_DataCorrect_ReturnStatus200() throws Exception {
+        Mockito.when(responseService.editRepository(repository.getOwner(), repository.getRepositoryName(), repository))
+                .thenReturn(repositoryDto);
+
+        mockMvc.perform(put("/repositories/local/budzikovy/jwt-authentication")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(repository)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
+                .andExpect(jsonPath("$.fullName").value(repositoryDto.getFullName()))
+                .andExpect(jsonPath("$.description").value(repositoryDto.getDescription()))
+                .andExpect(jsonPath("$.cloneUrl").value(repositoryDto.getCloneUrl()))
+                .andExpect(jsonPath("$.stars").value(repositoryDto.getStars()))
+                .andExpect(jsonPath("$.createdAt").value(repositoryDto.getCreatedAt()));
+    }
+
+    @Test
+    void deleteRepositoryByOwnerAndName_DataCorrect_ReturnStatus200() throws Exception {
+        Mockito.when(responseService.deleteRepository(repository.getOwner(), repository.getRepositoryName()))
+                .thenReturn(repositoryDto);
+
+        mockMvc.perform(delete("/repositories/local/budzikovy/jwt-authentication"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
+                .andExpect(jsonPath("$.fullName").value(repositoryDto.getFullName()))
+                .andExpect(jsonPath("$.description").value(repositoryDto.getDescription()))
+                .andExpect(jsonPath("$.cloneUrl").value(repositoryDto.getCloneUrl()))
+                .andExpect(jsonPath("$.stars").value(repositoryDto.getStars()))
+                .andExpect(jsonPath("$.createdAt").value(repositoryDto.getCreatedAt()));
+    }
 }

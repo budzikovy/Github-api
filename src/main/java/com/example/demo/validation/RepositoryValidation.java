@@ -1,8 +1,8 @@
-package com.example.demo.client.validation;
+package com.example.demo.validation;
 
-import com.example.demo.client.exception.RepositoryExistsException;
-import com.example.demo.client.model.entity.Repository;
-import com.example.demo.client.repository.RepositoryRepository;
+import com.example.demo.exception.RepositoryExistsException;
+import com.example.demo.model.entity.Repository;
+import com.example.demo.repository.RepositoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

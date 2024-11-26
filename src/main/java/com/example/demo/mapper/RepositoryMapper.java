@@ -1,8 +1,8 @@
-package com.example.demo.client.mapper;
+package com.example.demo.mapper;
 
-import com.example.demo.client.model.dto.GitHubRepository;
-import com.example.demo.client.model.entity.Repository;
-import com.example.demo.client.model.dto.RepositoryDto;
+import com.example.demo.model.dto.GitHubRepository;
+import com.example.demo.model.entity.Repository;
+import com.example.demo.model.dto.RepositoryDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

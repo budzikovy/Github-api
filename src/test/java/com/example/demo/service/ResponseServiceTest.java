@@ -1,16 +1,16 @@
 package com.example.demo.service;
 
 import com.example.demo.client.GitHubClient;
-import com.example.demo.client.exception.RepositoryNotFoundException;
-import com.example.demo.client.exception.RepositoryNotFoundGitHubException;
-import com.example.demo.client.mapper.RepositoryMapper;
-import com.example.demo.client.model.dto.GitHubRepository;
-import com.example.demo.client.model.dto.Owner;
-import com.example.demo.client.model.dto.RepositoryDto;
-import com.example.demo.client.model.entity.Repository;
-import com.example.demo.client.repository.RepositoryRepository;
-import com.example.demo.client.service.ResponseService;
-import com.example.demo.client.validation.RepositoryValidation;
+import com.example.demo.exception.RepositoryExistsException;
+import com.example.demo.exception.RepositoryNotFoundException;
+import com.example.demo.exception.RepositoryNotFoundGitHubException;
+import com.example.demo.mapper.RepositoryMapper;
+import com.example.demo.model.dto.GitHubRepository;
+import com.example.demo.model.dto.Owner;
+import com.example.demo.model.dto.RepositoryDto;
+import com.example.demo.model.entity.Repository;
+import com.example.demo.repository.RepositoryRepository;
+import com.example.demo.validation.RepositoryValidation;
 import feign.FeignException;
 import feign.Request;
 import org.junit.jupiter.api.BeforeEach;
@@ -82,31 +82,43 @@ public class ResponseServiceTest {
         assertEquals("2024-10-25T11:58:20Z", result.getCreatedAt());
     }
 
-//    @Test
-//    void saveRepository_RepositoryExists_RepositoryExistsExceptionThrown() {
-//        Mockito.doThrow(new RepositoryExistsException("Repository named " + repository.getRepositoryName() +" by " + repository.getOwner() + " already exists in database."))
-//                .when(repositoryValidation).validateRepositoryExists(repository.getOwner(), repository.getRepositoryName());
-//
-//        RepositoryExistsException exception = assertThrows(RepositoryExistsException.class, () ->
-//                responseService.saveRepository(repository.getOwner(), repository.getRepositoryName(), repository));
-//
-//        assertEquals("Repository named " + repository.getRepositoryName() + " by " + repository.getOwner() + " already exists in database.", exception.getMessage());
-//    }
+    @Test
+    void saveRepository_RepositoryExists_RepositoryExistsExceptionThrown() {
+        Mockito.doThrow(new RepositoryExistsException(repository.getRepositoryName(), repository.getOwner()))
+                .when(repositoryValidation).validateRepositoryExists(repository.getOwner(), repository.getRepositoryName());
 
+        RepositoryExistsException exception = assertThrows(RepositoryExistsException.class, () ->
+                responseService.saveRepository(repository.getOwner(), repository.getRepositoryName(), repository));
 
-//    @Test
-//    void getDetails_DataCorrect_RepositoryReturned() {
-//        when(gitHubClient.getDetails("budzikovy", "jwt-authentication")).thenReturn(gitHubRepository);
-//        when(repositoryMapper.toRepository(gitHubRepository)).thenReturn(repository);
-//
-//        Repository result = responseService.getDetails("budzikovy", "jwt-authentication");
-//
-//        assertNotNull(result);
-//        assertEquals("budzikovy", result.getOwner());
-//        assertEquals("jwt-authentication", result.getRepositoryName());
-//        assertEquals("https://github.com/budzikovy/jwt-authentication.git", result.getCloneUrl());
-//        assertEquals("2024-01-01T00:00:00Z", result.getCreatedAt());
-//    }
+        assertEquals("Repository named " + repository.getRepositoryName() + " by " + repository.getOwner() + " already exists in database.", exception.getMessage());
+    }
+
+    @Test
+    void getDetails_DataCorrect_RepositoryReturned() {
+
+        when(gitHubClient.getDetails("budzikovy", "jwt-authentication")).thenReturn(gitHubRepository);
+
+        Repository result = responseService.getDetails(repository.getOwner(), repository.getRepositoryName());
+
+        assertNotNull(result);
+        assertEquals("budzikovy/jwt-authentication", result.getFullName());
+        assertEquals("test endpoint put", result.getDescription());
+        assertEquals("https://github.com/budzikovy/jwt-authentication.git", result.getCloneUrl());
+        assertEquals(1, result.getStars());
+        assertEquals("2024-10-25T11:58:20Z", result.getCreatedAt());
+    }
+
+    @Test
+    void getDetails_RepositoryNotFound_RepositoryNotFoundExceptionThrown() {
+
+        when(gitHubClient.getDetails(repository.getOwner(), "123")).thenThrow(FeignException.NotFound.class);
+
+        RepositoryNotFoundGitHubException exception = assertThrows(RepositoryNotFoundGitHubException.class, () ->
+                responseService.getDetails(repository.getOwner(), "123"));
+
+        assertEquals("GitHub api cannot find repository named 123 by budzikovy.", exception.getMessage());
+
+    }
 
     @Test
     void getDetails_RepositoryNotFound_RepositoryNotFoundGitHubExceptionThrown() {
@@ -146,7 +158,6 @@ public class ResponseServiceTest {
         assertEquals(exMessage, exception.getMessage());
 
     }
-
 
     @Test
     void deleteRepository_DataCorrect_RepositoryDtoReturned() {

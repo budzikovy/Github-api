@@ -1,10 +1,12 @@
-package com.example.demo.client.model.dto;
+package com.example.demo.model.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Builder
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class RepositoryDto {
 
     private Long id;

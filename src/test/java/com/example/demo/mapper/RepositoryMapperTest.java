@@ -1,10 +1,9 @@
 package com.example.demo.mapper;
 
-import com.example.demo.client.mapper.RepositoryMapper;
-import com.example.demo.client.model.dto.GitHubRepository;
-import com.example.demo.client.model.dto.Owner;
-import com.example.demo.client.model.dto.RepositoryDto;
-import com.example.demo.client.model.entity.Repository;
+import com.example.demo.model.dto.GitHubRepository;
+import com.example.demo.model.dto.Owner;
+import com.example.demo.model.dto.RepositoryDto;
+import com.example.demo.model.entity.Repository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

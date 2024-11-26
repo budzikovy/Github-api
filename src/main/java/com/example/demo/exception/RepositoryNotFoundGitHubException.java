@@ -1,4 +1,4 @@
-package com.example.demo.client.exception;
+package com.example.demo.exception;
 
 public class RepositoryNotFoundGitHubException extends RuntimeException {
     public RepositoryNotFoundGitHubException(String repositoryName, String owner) {

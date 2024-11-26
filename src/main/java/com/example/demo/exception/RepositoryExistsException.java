@@ -1,4 +1,4 @@
-package com.example.demo.client.exception;
+package com.example.demo.exception;
 
 public class RepositoryExistsException extends RuntimeException {
     public RepositoryExistsException(String repositoryName, String owner) {

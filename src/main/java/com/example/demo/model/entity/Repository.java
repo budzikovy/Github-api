@@ -1,4 +1,4 @@
-package com.example.demo.client.model.entity;
+package com.example.demo.model.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,8 +10,9 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
+@EqualsAndHashCode
 @NoArgsConstructor
+@AllArgsConstructor
 public class Repository {
 
     @Id

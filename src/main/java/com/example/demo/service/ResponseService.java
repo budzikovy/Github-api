@@ -1,14 +1,14 @@
-package com.example.demo.client.service;
+package com.example.demo.service;
 
 import com.example.demo.client.GitHubClient;
-import com.example.demo.client.model.dto.GitHubRepository;
-import com.example.demo.client.model.entity.Repository;
-import com.example.demo.client.model.dto.RepositoryDto;
-import com.example.demo.client.exception.RepositoryNotFoundException;
-import com.example.demo.client.exception.RepositoryNotFoundGitHubException;
-import com.example.demo.client.mapper.RepositoryMapper;
-import com.example.demo.client.repository.RepositoryRepository;
-import com.example.demo.client.validation.RepositoryValidation;
+import com.example.demo.model.dto.GitHubRepository;
+import com.example.demo.model.entity.Repository;
+import com.example.demo.model.dto.RepositoryDto;
+import com.example.demo.exception.RepositoryNotFoundException;
+import com.example.demo.exception.RepositoryNotFoundGitHubException;
+import com.example.demo.mapper.RepositoryMapper;
+import com.example.demo.repository.RepositoryRepository;
+import com.example.demo.validation.RepositoryValidation;
 import feign.FeignException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
