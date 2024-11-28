@@ -1,0 +1,11 @@
+# WYBIERAMY ŚRODOWISKO JAVY
+FROM amazoncorretto:17.0.13-alpine
+
+# OSOBA ODPOWIEDZIALNA ZA OBRAZ
+LABEL maintainer="budzikovy"
+
+# KOPIUJEMY NASZ PLIK JAR DO OBRAZU
+COPY target/demo-0.0.1-SNAPSHOT.jar demo-0.0.1-SNAPSHOT.jar
+
+# PLIK WYKONYWALNY
+ENTRYPOINT ["java", "-jar", "/demo-0.0.1-SNAPSHOT.jar"]
