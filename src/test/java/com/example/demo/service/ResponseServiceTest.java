@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 public class ResponseServiceTest {
 
-    ResponseService responseService;
+    RepositoryService responseService;
     GitHubClient gitHubClient;
     RepositoryMapper repositoryMapper;
     RepositoryRepository repositoryRepository;
@@ -39,7 +39,7 @@ public class ResponseServiceTest {
         this.repositoryMapper = Mappers.getMapper(RepositoryMapper.class);
         this.gitHubClient = Mockito.mock(GitHubClient.class);
         this.repositoryValidation = Mockito.mock(RepositoryValidation.class);
-        this.responseService = new ResponseService(gitHubClient, repositoryMapper, repositoryRepository, repositoryValidation);
+        this.responseService = new RepositoryService(gitHubClient, repositoryMapper, repositoryRepository, repositoryValidation);
     }
 
     GitHubRepository gitHubRepository = GitHubRepository.builder()

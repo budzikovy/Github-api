@@ -12,21 +12,24 @@ import java.time.Instant;
 @ControllerAdvice
 public class GitHubExceptionHandler {
 
+    private static final String CONFLICT_MESSAGE = "Conflict";
+    private static final String NOT_FOUND_MESSAGE = "Not Found";
+
     @ExceptionHandler(RepositoryNotFoundException.class)
     public ResponseEntity<ErrorMessageDTO> handleRepositoryNotFoundException(RepositoryNotFoundException exception) {
-        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.NOT_FOUND, "Not Found", exception.getMessage(), Timestamp.from(Instant.now()));
+        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.NOT_FOUND, NOT_FOUND_MESSAGE, exception.getMessage(), Timestamp.from(Instant.now()));
         return new ResponseEntity<>(bodyOfResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(RepositoryNotFoundGitHubException.class)
     public ResponseEntity<ErrorMessageDTO> RepositoryNotFoundGitHubException(RepositoryNotFoundGitHubException exception) {
-        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.NOT_FOUND, "Not Found", exception.getMessage(), Timestamp.from(Instant.now()));
+        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.NOT_FOUND, NOT_FOUND_MESSAGE, exception.getMessage(), Timestamp.from(Instant.now()));
         return new ResponseEntity<>(bodyOfResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(RepositoryExistsException.class)
     public ResponseEntity<ErrorMessageDTO> handleRepositoryExistsException(RepositoryExistsException exception) {
-        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), Timestamp.from(Instant.now()));
+        ErrorMessageDTO bodyOfResponse = new ErrorMessageDTO(HttpStatus.CONFLICT, CONFLICT_MESSAGE, exception.getMessage(), Timestamp.from(Instant.now()));
         return new ResponseEntity<>(bodyOfResponse, HttpStatus.CONFLICT);
     }
 

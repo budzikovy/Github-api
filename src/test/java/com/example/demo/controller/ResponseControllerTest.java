@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.model.dto.RepositoryDto;
 import com.example.demo.model.entity.Repository;
-import com.example.demo.service.ResponseService;
+import com.example.demo.service.RepositoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,7 +28,7 @@ public class ResponseControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private ResponseService responseService;
+    private RepositoryService responseService;
 
     Repository repository = Repository.builder()
             .id(1L)

@@ -10,12 +10,13 @@ import com.example.demo.mapper.RepositoryMapper;
 import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.validation.RepositoryValidation;
 import feign.FeignException;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
-public class ResponseService {
+public class RepositoryService {
 
     private final GitHubClient gitHubClient;
     private final RepositoryMapper repositoryMapper;
@@ -31,6 +32,7 @@ public class ResponseService {
         }
     }
 
+    @Transactional
     public RepositoryDto saveRepository(String owner, String repositoryName, Repository repository) {
         repositoryValidation.validateRepositoryExists(owner, repositoryName);
 
@@ -38,8 +40,6 @@ public class ResponseService {
             repository = getDetails(owner, repositoryName);
         }
 
-        repository.setOwner(owner);
-        repository.setRepositoryName(repositoryName);
         repositoryRepository.save(repository);
         return repositoryMapper.toDto(repository);
     }
@@ -52,6 +52,7 @@ public class ResponseService {
         return repositoryMapper.toDto(repositoryDetails);
     }
 
+    @Transactional
     public RepositoryDto deleteRepository(String owner, String repositoryName) {
         Repository deletedRepository = repositoryRepository.findByOwnerAndRepositoryName(owner, repositoryName)
                 .orElseThrow(() -> new RepositoryNotFoundException(repositoryName, owner));
@@ -59,6 +60,7 @@ public class ResponseService {
         return repositoryMapper.toDto(deletedRepository);
     }
 
+    @Transactional
     public RepositoryDto editRepository(String owner, String repositoryName, Repository updatedRepository) {
         Repository editRepository = repositoryRepository.findByOwnerAndRepositoryName(owner, repositoryName)
                 .orElseThrow(() -> new RepositoryNotFoundException(repositoryName, owner));
