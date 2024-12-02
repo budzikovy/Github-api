@@ -90,7 +90,7 @@ public class ResponseControllerTest {
         Mockito.when(responseService.getRepositoryDetails(repository.getOwner(), repository.getRepositoryName()))
                 .thenReturn(repositoryDto);
 
-        mockMvc.perform(get("/repositories/local/budzikovy/jwt-authentication"))
+        mockMvc.perform(get("/local/repositories/budzikovy/jwt-authentication"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
@@ -106,7 +106,7 @@ public class ResponseControllerTest {
         Mockito.when(responseService.editRepository(repository.getOwner(), repository.getRepositoryName(), repository))
                 .thenReturn(repositoryDto);
 
-        mockMvc.perform(put("/repositories/local/budzikovy/jwt-authentication")
+        mockMvc.perform(put("/repositories/budzikovy/jwt-authentication")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(repository)))
                 .andDo(print())
@@ -124,7 +124,7 @@ public class ResponseControllerTest {
         Mockito.when(responseService.deleteRepository(repository.getOwner(), repository.getRepositoryName()))
                 .thenReturn(repositoryDto);
 
-        mockMvc.perform(delete("/repositories/local/budzikovy/jwt-authentication"))
+        mockMvc.perform(delete("/repositories/budzikovy/jwt-authentication"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(repositoryDto.getId()))
