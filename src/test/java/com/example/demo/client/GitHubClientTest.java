@@ -1,9 +1,11 @@
 package com.example.demo.client;
 
+import com.example.demo.exception.RepositoryNotFoundException;
 import com.example.demo.model.dto.GitHubRepository;
 import com.example.demo.model.dto.Owner;
 import com.example.demo.model.dto.RepositoryDto;
 import com.example.demo.model.entity.Repository;
+import com.example.demo.repository.RepositoryRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -15,15 +17,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @AutoConfigureWireMock(port = 8089)
 @NoArgsConstructor
 public class GitHubClientTest {
@@ -32,10 +36,10 @@ public class GitHubClientTest {
     WireMockServer wireMockServer;
 
     @Autowired
-    GitHubClient gitHubClient;
+    ObjectMapper objectMapper;
 
     @Autowired
-    ObjectMapper objectMapper;
+    RepositoryRepository repositoryRepository;
 
     private RestTemplate restTemplate;
 
@@ -45,6 +49,7 @@ public class GitHubClientTest {
         restTemplate = new RestTemplateBuilder()
                 .rootUri("http://localhost:8089")
                 .build();
+        repositoryRepository.deleteAll();
     }
 
     @AfterEach
@@ -57,7 +62,6 @@ public class GitHubClientTest {
     private static final String REPOSITORY_NAME = "jwt-authentication";
 
     private static final String GITHUB_URL = "/repos/" + USERNAME + "/" + REPOSITORY_NAME;
-    private static final String BASE_URL = "/repositories/" + USERNAME + "/" + REPOSITORY_NAME;
 
     GitHubRepository gitHubRepository = GitHubRepository.builder()
             .id(1)
@@ -90,20 +94,19 @@ public class GitHubClientTest {
             .createdAt("2024-01-01T00:00:00Z")
             .build();
 
-    String url = String.format("/repositories/%s/%s", USERNAME, REPOSITORY_NAME);
+    String url = UriComponentsBuilder.fromHttpUrl("http://localhost:8088")
+            .path("/repositories/" + USERNAME + "/" + REPOSITORY_NAME)
+            .toUriString();
 
     @Test
     public void getDetails_DataCorrect_RepositoryReturned() throws JsonProcessingException {
-        String response = objectMapper.writeValueAsString(gitHubRepository);
-
         wireMockServer.stubFor(get(urlEqualTo(GITHUB_URL))
                 .willReturn(aResponse()
                         .withStatus(HttpStatus.OK.value())
                         .withHeader("Content-Type", "application/json")
-                        .withBody(response)));
+                        .withBody(objectMapper.writeValueAsString(gitHubRepository))));
 
-        String urlGitHub = String.format("/repos/%s/%s", USERNAME, REPOSITORY_NAME);
-        GitHubRepository result = restTemplate.getForObject(urlGitHub, GitHubRepository.class);
+        GitHubRepository result = restTemplate.getForObject(url, GitHubRepository.class);
 
         assertThat(result).isNotNull();
         assertEquals(REPOSITORY_NAME, result.getRepositoryName());
@@ -113,83 +116,107 @@ public class GitHubClientTest {
         assertEquals(gitHubRepository.getFullName(), result.getFullName());
         assertEquals(gitHubRepository.getStars(), result.getStars());
         assertEquals(gitHubRepository.getCreatedAt(), result.getCreatedAt());
+
     }
 
     @Test
     public void saveRepository_DataCorrect_RepositoryDtoReturned() throws JsonProcessingException {
-        String request = objectMapper.writeValueAsString(repositoryDto);
-        String response = objectMapper.writeValueAsString(repository);
-
-        wireMockServer.stubFor(post(urlEqualTo(BASE_URL))
-                .withHeader("Content-Type", equalTo(MediaType.APPLICATION_JSON_VALUE))
-                .withRequestBody(equalToJson(request))
+        wireMockServer.stubFor(get(urlEqualTo(GITHUB_URL))
                 .willReturn(aResponse()
-                        .withStatus(HttpStatus.CREATED.value())
+                        .withStatus(HttpStatus.OK.value())
                         .withHeader("Content-Type", "application/json")
-                        .withBody(response)));
+                        .withBody(objectMapper.writeValueAsString(repositoryDto))));
 
-        Repository savedRepository = restTemplate.postForObject(url, repositoryDto, Repository.class);
+        ResponseEntity<RepositoryDto> result = restTemplate.postForEntity(url, repository, RepositoryDto.class);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        RepositoryDto savedRepository = result.getBody();
 
         assertThat(savedRepository).isNotNull();
-        assertEquals(REPOSITORY_NAME, savedRepository.getRepositoryName());
-        assertEquals(USERNAME, savedRepository.getOwner());
         assertEquals(repository.getDescription(), savedRepository.getDescription());
         assertEquals(repository.getCloneUrl(), savedRepository.getCloneUrl());
         assertEquals(repository.getFullName(), savedRepository.getFullName());
         assertEquals(repository.getStars(), savedRepository.getStars());
         assertEquals(repository.getCreatedAt(), savedRepository.getCreatedAt());
+
+        Repository savedRepositoryLocally = repositoryRepository.findByOwnerAndRepositoryName(USERNAME, REPOSITORY_NAME)
+                .orElseThrow(() -> new RepositoryNotFoundException(REPOSITORY_NAME, USERNAME));
+
+        assertEquals(repository.getDescription(), savedRepositoryLocally.getDescription());
+        assertEquals(repository.getCloneUrl(), savedRepositoryLocally.getCloneUrl());
+        assertEquals(repository.getFullName(), savedRepositoryLocally.getFullName());
+        assertEquals(repository.getStars(), savedRepositoryLocally.getStars());
+        assertEquals(repository.getCreatedAt(), savedRepositoryLocally.getCreatedAt());
+
     }
 
     @Test
-    public void editRepository_DataCorrect_RepositoryDtoReturned() throws JsonProcessingException {
-        String request = objectMapper.writeValueAsString(repositoryDto);
-        String response = objectMapper.writeValueAsString(repository);
+    public void getRepositoryDetails_DataCorrect_RepositoryDtoReturned() {
 
-        wireMockServer.stubFor(put(urlEqualTo(BASE_URL))
-                .withHeader("Content-Type", equalTo(MediaType.APPLICATION_JSON_VALUE))
-                .withRequestBody(equalToJson(request))
-                .willReturn(aResponse()
-                        .withStatus(HttpStatus.OK.value())
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(response)));
+        String urlLocal = UriComponentsBuilder.fromHttpUrl("http://localhost:8088")
+                .path("/local/repositories/" + USERNAME + "/" + REPOSITORY_NAME)
+                .toUriString();
 
-        restTemplate.put(url, repositoryDto, Repository.class);
+        repositoryRepository.save(repository);
 
-        wireMockServer.verify(putRequestedFor(urlEqualTo("/repositories/" + USERNAME + "/" + REPOSITORY_NAME))
-                .withRequestBody(equalToJson(request)));
+        ResponseEntity<RepositoryDto> result = restTemplate.exchange(urlLocal, HttpMethod.GET, HttpEntity.EMPTY, RepositoryDto.class);
+
+        assertNotNull(result.getBody());
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+
+        assertEquals(repository.getFullName(), result.getBody().getFullName());
+        assertEquals(repository.getDescription(), result.getBody().getDescription());
+        assertEquals(repository.getCloneUrl(), result.getBody().getCloneUrl());
+        assertEquals(repository.getStars(), result.getBody().getStars());
+        assertEquals(repository.getCreatedAt(), result.getBody().getCreatedAt());
+
     }
 
     @Test
-    public void deleteRepositoryByOwnerAndName_DataCorrect_RepositoryDtoReturned() {
-        wireMockServer.stubFor(delete(urlEqualTo(BASE_URL))
-                .willReturn(aResponse()
-                        .withStatus(HttpStatus.NO_CONTENT.value())));
+    public void editRepository_DataCorrect_RepositoryDtoReturned() {
 
-        restTemplate.delete(url);
+        repositoryRepository.save(repository);
 
-        wireMockServer.verify(deleteRequestedFor(urlEqualTo("/repositories/" + USERNAME + "/" + REPOSITORY_NAME)));
+        RepositoryDto editedRepository = RepositoryDto.builder()
+                .fullName("budzikofy/jwt-authentication")
+                .description("change")
+                .cloneUrl("https://github.com/budzikofy/jwt-authentication.git")
+                .build();
+
+        RepositoryDto result = restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(editedRepository), RepositoryDto.class).getBody();
+
+        assertNotNull(result);
+        assertEquals(editedRepository.getFullName(), result.getFullName());
+        assertEquals(editedRepository.getDescription(), result.getDescription());
+        assertEquals(editedRepository.getStars(), result.getStars());
+        assertEquals(editedRepository.getCloneUrl(), result.getCloneUrl());
+
+        Repository updatedRepository = repositoryRepository.findByOwnerAndRepositoryName(USERNAME, REPOSITORY_NAME)
+                .orElseThrow(() -> new AssertionError("Repository not found in database"));
+
+        assertEquals(editedRepository.getFullName(), updatedRepository.getFullName());
+        assertEquals(editedRepository.getDescription(), updatedRepository.getDescription());
+        assertEquals(editedRepository.getStars(), updatedRepository.getStars());
+        assertEquals(editedRepository.getCloneUrl(), updatedRepository.getCloneUrl());
+
     }
 
     @Test
-    public void getRepositoryDetails_DataCorrect_RepositoryDtoReturned() throws JsonProcessingException {
-        String response = objectMapper.writeValueAsString(repository);
+    public void deleteRepositoryByOwnerAndName_DataCorrect_RepositoryDeleted() {
 
-        wireMockServer.stubFor(get(urlEqualTo("/local/repositories/" + USERNAME + "/" + REPOSITORY_NAME))
-                .willReturn(aResponse()
-                        .withStatus(HttpStatus.OK.value())
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(response)));
+        repositoryRepository.save(repository);
 
-        String urlLocal = String.format("/local/repositories/%s/%s", USERNAME, REPOSITORY_NAME);
-        Repository result = restTemplate.getForObject(urlLocal, Repository.class);
+        Repository savedRepository = repositoryRepository.findByOwnerAndRepositoryName(repository.getOwner(), repository.getRepositoryName())
+                .orElseThrow(() -> new AssertionError("Repository not saved in database"));
+        assertNotNull(savedRepository);
 
-        assertThat(result).isNotNull();
-        assertEquals(REPOSITORY_NAME, result.getRepositoryName());
-        assertEquals(USERNAME, result.getOwner());
-        assertEquals(repository.getDescription(), result.getDescription());
-        assertEquals(repository.getCloneUrl(), result.getCloneUrl());
-        assertEquals(repository.getFullName(), result.getFullName());
-        assertEquals(repository.getStars(), result.getStars());
-        assertEquals(repository.getCreatedAt(), result.getCreatedAt());
+        ResponseEntity<Void> result = restTemplate.exchange(url, HttpMethod.DELETE, HttpEntity.EMPTY, Void.class);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+
+        Optional<Repository> deletedRepository = repositoryRepository.findByOwnerAndRepositoryName(repository.getOwner(), repository.getRepositoryName());
+        assertTrue(deletedRepository.isEmpty(), "Repository was not deleted from database");
+
     }
 }
